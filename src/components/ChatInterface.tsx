@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Globe } from 'lucide-react';
 import clsx from 'clsx';
 
 interface Message {
   role: 'user' | 'model';
   parts: string;
-  sources?: { title: string; text: string }[];
+  sources?: { title: string; text: string; url?: string }[];
 }
 
 interface ChatInterfaceProps {
@@ -26,6 +26,7 @@ export default function ChatInterface({ courseId, stepContext }: ChatInterfacePr
     ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [includeWebSearch, setIncludeWebSearch] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function ChatInterface({ courseId, stepContext }: ChatInterfacePr
             parts: [{ text: m.parts }],
           })),
           stepContext, // Pass the context
+          includeWebSearch,
         }),
       });
 
@@ -144,22 +146,38 @@ export default function ChatInterface({ courseId, stepContext }: ChatInterfacePr
         )}
       </div>
 
-      <div className="p-4 bg-gray-900 border-t border-gray-700 flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Ask a question..."
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 text-white"
-        />
-        <button
-          onClick={handleSend}
-          disabled={loading || !input.trim()}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2 rounded-lg transition-colors"
-        >
-          <Send className="w-5 h-5" />
-        </button>
+      <div className="p-4 bg-gray-900 border-t border-gray-700 flex flex-col gap-2">
+        <div className="flex items-center gap-2 px-2">
+            <button
+                onClick={() => setIncludeWebSearch(!includeWebSearch)}
+                className={clsx(
+                    "text-xs flex items-center gap-1 px-2 py-1 rounded-full transition-colors",
+                    includeWebSearch 
+                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/50" 
+                        : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
+                )}
+            >
+                <Globe className="w-3 h-3" />
+                {includeWebSearch ? "Web Search On" : "Search Web"}
+            </button>
+        </div>
+        <div className="flex gap-2">
+            <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Ask a question..."
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 text-white"
+            />
+            <button
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2 rounded-lg transition-colors"
+            >
+            <Send className="w-5 h-5" />
+            </button>
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { VectorService } from '@/services/vector';
 import { hf, CHAT_MODEL } from '@/lib/huggingface';
 import { NextResponse, NextRequest } from 'next/server';
 
+import { ApifyService } from '@/services/apify';
+
 export async function POST(req: NextRequest) {
     try {
         const { userId } = await auth();
@@ -15,14 +17,24 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
         }
 
-        const { message, courseId, history, stepContext } = await req.json();
+        const { message, courseId, history, stepContext, includeWebSearch } = await req.json();
 
         // 1. Retrieve relevant context from Vector DB
         // If stepContext is provided, we prioritize searching for that
         const query = stepContext ? `${stepContext} ${message}` : message;
 
         const searchResults = await VectorService.searchSimilarContent(query, courseId);
-        const context = searchResults.map((r: any) => r.text).join('\n\n');
+        let context = searchResults.map((r: any) => r.text).join('\n\n');
+
+        // 1.5 Perform Web Search if requested
+        let webResults: any[] = [];
+        if (includeWebSearch) {
+            webResults = await ApifyService.searchGoogle(message);
+            if (webResults.length > 0) {
+                const webContext = webResults.map(r => `[Web Source: ${r.title}](${r.url}): ${r.description}`).join('\n');
+                context += `\n\n--- LIVE WEB SEARCH RESULTS ---\n${webContext}\n-------------------------------`;
+            }
+        }
 
         // 2. Construct prompt
         let systemInstructions = `You are a helpful, sweet, and highly motivating AI Tutor for this course.
@@ -35,7 +47,7 @@ export async function POST(req: NextRequest) {
         const systemPrompt = `${systemInstructions}
     
     Instructions:
-    1. Answer the student's question based on the provided Context from course materials.
+    1. Answer the student's question based on the provided Context (Course Materials + Web Search Results).
     2. If the answer is found in the Context, cite the material source if possible.
     3. If the answer is NOT in the Context, use your general knowledge to answer helpfully, but politely mention that this information is from your general knowledge and not specifically from the uploaded course documents.
     4. Be EXTREMELY concise. Keep answers short, punchy, and to the point. Avoid long pleasantries.
@@ -65,7 +77,10 @@ export async function POST(req: NextRequest) {
 
         const responseText = response.choices[0].message.content || "I couldn't generate a response.";
 
-        return NextResponse.json({ response: responseText, sources: searchResults });
+        return NextResponse.json({
+            response: responseText,
+            sources: [...searchResults, ...webResults.map(r => ({ title: `[WEB] ${r.title}`, text: r.description, url: r.url }))]
+        });
     } catch (error: any) {
         console.error('Chat error:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));

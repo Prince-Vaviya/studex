@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, MessageSquare, CheckCircle, BrainCircuit, Loader2 } from 'lucide-react';
+import { X, MessageSquare, CheckCircle, BrainCircuit, Loader2, Youtube } from 'lucide-react';
 import ChatInterface from './ChatInterface';
+import YouTubeQuizModal from './YouTubeQuizModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Question {
@@ -53,6 +54,7 @@ export default function StudyMode({
     const [showExplanation, setShowExplanation] = useState(false);
     const [score, setScore] = useState(0);
     const [quizCompleted, setQuizCompleted] = useState(false);
+    const [showYouTubeModal, setShowYouTubeModal] = useState(false);
 
     const generateQuiz = async () => {
         setLoadingQuiz(true);
@@ -98,6 +100,20 @@ export default function StudyMode({
 
     return (
         <AnimatePresence>
+            {showYouTubeModal && (
+                <YouTubeQuizModal 
+                    isOpen={showYouTubeModal} 
+                    onClose={() => setShowYouTubeModal(false)} 
+                    onQuizGenerated={(newQuiz) => {
+                        setQuiz(newQuiz);
+                        setScore(0);
+                        setCurrentQuestionIndex(0);
+                        setQuizCompleted(false);
+                        setShowExplanation(false);
+                        setSelectedOption(null);
+                    }} 
+                />
+            )}
             <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -191,6 +207,20 @@ export default function StudyMode({
                                             >
                                                 {loadingQuiz ? <Loader2 className="w-5 h-5 animate-spin" /> : <BrainCircuit className="w-5 h-5" />}
                                                 Generate Quiz
+                                            </button>
+                                            
+                                            <div className="flex items-center gap-4 my-4 w-full max-w-xs">
+                                                <div className="h-px bg-gray-700 flex-1"></div>
+                                                <span className="text-gray-500 text-sm">OR</span>
+                                                <div className="h-px bg-gray-700 flex-1"></div>
+                                            </div>
+
+                                            <button 
+                                                onClick={() => setShowYouTubeModal(true)}
+                                                className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                                            >
+                                                <Youtube className="w-5 h-5" />
+                                                Generate from YouTube
                                             </button>
                                         </div>
                                     ) : quizCompleted ? (

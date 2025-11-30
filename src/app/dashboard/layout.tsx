@@ -1,4 +1,5 @@
 import Navbar from '@/components/Navbar';
+import GlobalChatWidget from '@/components/GlobalChatWidget';
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
       <main className="max-w-7xl mx-auto px-6 pb-12">
         {children}
       </main>
+      <GlobalChatWidget />
     </div>
   );
 }

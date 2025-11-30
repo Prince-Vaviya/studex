@@ -12,6 +12,7 @@
     "@clerk/nextjs": "^6.35.5",
     "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^4.13.4",
+    "apify-client": "^2.20.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "google-auth-library": "^10.5.0",
